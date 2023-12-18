@@ -9,6 +9,9 @@ import threading
 import time
 import select
 import logging
+from hashing import Hashing
+
+hashing = Hashing()
 
 # Server side of peer
 class PeerServer(threading.Thread):
@@ -416,7 +419,8 @@ class peerMain:
     def login(self, username, password, peerServerPort):
         # a login message is composed and sent to registry
         # an integer is returned according to each response
-        message = "LOGIN " + username + " " + password + " " + str(peerServerPort)
+        # Added encoding to the password
+        message = "LOGIN " + username + " " + hashing.encodePassword(password) + " " + str(peerServerPort)
         logging.info("Send to " + self.registryName + ":" + str(self.registryPort) + " -> " + message)
         self.tcpClientSocket.send(message.encode())
         response = self.tcpClientSocket.recv(1024).decode()

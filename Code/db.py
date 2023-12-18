@@ -1,4 +1,7 @@
 from pymongo import MongoClient
+from hashing import Hashing
+
+hashing = Hashing()
 
 # Includes database operations
 class DB:
@@ -19,10 +22,11 @@ class DB:
     
 
     # registers a user
+    # Adds hashing to the password
     def register(self, username, password):
         account = {
             "username": username,
-            "password": password
+            "password": hashing.encodePassword(password)
         }
         self.db.accounts.insert_one(account)
 
