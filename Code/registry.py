@@ -122,6 +122,19 @@ class ClientThread(threading.Thread):
                     else:
                         self.tcpClientSocket.close()
                         break
+                 # List users #
+                elif message[0] == "List":
+                    response = ""
+                    list = db.get_online_users()
+                    for i in range(len(list)):
+                        response = list[i] + " " + response
+                    self.tcpClientSocket.send(response.encode())
+
+                #get color#
+                elif message[0] =="Color":
+                    response = db.get_color(message[1])
+                    self.tcpClientSocket.send(response.encode())
+                    
                 #   SEARCH  #
                 elif message[0] == "SEARCH":
                     # checks if an account with the username exists

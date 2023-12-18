@@ -1,5 +1,7 @@
 from pymongo import MongoClient
 from hashing import Hashing
+import random
+import colorama
 
 hashing = Hashing()
 
@@ -46,10 +48,33 @@ class DB:
     
     # logs in the user
     def user_login(self, username, ip, port):
+        x= [colorama.Fore.RED,
+            colorama.Fore.GREEN, 
+            colorama.Fore.YELLOW,
+            colorama.Fore.BLUE,
+            colorama.Fore.MAGENTA,
+            colorama.Fore.CYAN,
+            colorama.Fore.WHITE,
+            (colorama.Fore.RED + colorama.Style.BRIGHT),
+            (colorama.Fore.GREEN + colorama.Style.BRIGHT),
+            (colorama.Fore.YELLOW + colorama.Style.BRIGHT),
+            (colorama.Fore.BLUE + colorama.Style.BRIGHT),
+            (colorama.Fore.MAGENTA + colorama.Style.BRIGHT),
+            (colorama.Fore.CYAN + colorama.Style.BRIGHT),
+            (colorama.Fore.WHITE + colorama.Style.BRIGHT),
+            (colorama.Fore.RED + colorama.Style.DIM),
+            (colorama.Fore.GREEN + colorama.Style.DIM),
+            (colorama.Fore.YELLOW + colorama.Style.DIM),
+            (colorama.Fore.BLUE + colorama.Style.DIM),
+            (colorama.Fore.MAGENTA + colorama.Style.DIM),
+            (colorama.Fore.CYAN + colorama.Style.DIM),
+            (colorama.Fore.WHITE + colorama.Style.DIM),
+            ]
         online_peer = {
             "username": username,
             "ip": ip,
-            "port": port
+            "port": port,
+            "color" : x[random.randint(0,len(x)-1)]
         }
         self.db.online_peers.insert_one(online_peer)
     
@@ -63,3 +88,17 @@ class DB:
     def get_peer_ip_port(self, username):
         res = self.db.online_peers.find_one({"username": username})
         return (res["ip"], res["port"])
+    
+     #return list of online usernames
+    def get_online_users (self):
+        x = self.db.online_peers.find({},{"username": 1 ,"_id" :0})
+        x = list(x)
+        nameList = []
+        for i in range(len(x)):
+            nameList.append(x[i]["username"])
+        return nameList
+
+    #get color
+    def get_color(self,username):
+        color = self.db.online_peers.find_one({"username" : username})["color"]
+        return color

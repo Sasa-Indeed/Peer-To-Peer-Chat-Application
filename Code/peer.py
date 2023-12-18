@@ -10,6 +10,7 @@ import time
 import select
 import logging
 from hashing import Hashing
+import colorama
 
 hashing = Hashing()
 
@@ -18,10 +19,12 @@ class PeerServer(threading.Thread):
 
 
     # Peer server initialization
-    def __init__(self, username, peerServerPort):
+    def __init__(self, username,color, peerServerPort):
         threading.Thread.__init__(self)
         # keeps the username of the peer
         self.username = username
+        #color of peer
+        self.color = color
         # tcp socket for peer server
         self.tcpServerSocket = socket(AF_INET, SOCK_STREAM)
         # port number of the peer server
@@ -39,6 +42,8 @@ class PeerServer(threading.Thread):
         self.isOnline = True
         # keeps the username of the peer that this peer is chatting with
         self.chattingClientName = None
+        #return color back to white
+        colorama.init(autoreset=True)
     
 
     # main method of the peer server thread
@@ -129,7 +134,7 @@ class PeerServer(threading.Thread):
                         # if a message is received, and if this is not a quit message ':q' and 
                         # if it is not an empty message, show this message to the user
                         elif messageReceived[:2] != ":q" and len(messageReceived)!= 0:
-                            print(self.chattingClientName + ": " + messageReceived)
+                            print(self.color + self.chattingClientName + ": " + messageReceived)
                         # if the message received is a quit message ':q',
                         # makes ischatrequested 1 to receive new incoming request messages
                         # removes the socket of the connected peer from the inputs list
@@ -312,7 +317,7 @@ class peerMain:
         # as long as the user is not logged out, asks to select an option in the menu
         while choice != "3":
             # menu selection prompt
-            choice = input("Choose: \nCreate account: 1\nLogin: 2\nLogout: 3\nSearch: 4\nStart a chat: 5\n")
+            choice = input("Choose: \nCreate account: 1\nLogin: 2\nLogout: 3\nSearch: 4\nStart a chat: 5\nShow online users: 6\n")
             # if choice is 1, creates an account with the username
             # and password entered by the user
             if choice is "1":
@@ -332,10 +337,11 @@ class peerMain:
                 # is user logs in successfully, peer variables are set
                 if status is 1:
                     self.isOnline = True
-                    self.loginCredentials = (username, password)
+                    color = self.get_color(username)
+                    self.loginCredentials = (username, password,color)
                     self.peerServerPort = peerServerPort
                     # creates the server thread for this peer, and runs it
-                    self.peerServer = PeerServer(self.loginCredentials[0], self.peerServerPort)
+                    self.peerServer = PeerServer(self.loginCredentials[0],self.loginCredentials[2], self.peerServerPort)
                     self.peerServer.start()
                     # hello message is sent to registry
                     self.sendHelloMessage()
@@ -395,6 +401,10 @@ class peerMain:
             elif choice == "CANCEL":
                 self.timer.cancel()
                 break
+
+            #choice 6 to display usernames of all online users
+            elif choice is "6" and self.isOnline:
+                self.get_users()
         # if main process is not ended with cancel selection
         # socket of the client is closed
         if choice != "CANCEL":
@@ -479,6 +489,21 @@ class peerMain:
         self.udpClientSocket.sendto(message.encode(), (self.registryName, self.registryUDPPort))
         self.timer = threading.Timer(1, self.sendHelloMessage)
         self.timer.start()
+
+    #print list of online users
+    def get_users(self):
+        message = "List"
+        self.tcpClientSocket.send(message.encode())
+        response = self.tcpClientSocket.recv(1024).decode().split()
+        for i in range(len(response)):
+            print(response[i])
+
+    # gets color assigned to current online user
+    def get_color(self,username):
+        message = "Color " + username
+        self.tcpClientSocket.send(message.encode())
+        response = self.tcpClientSocket.recv(1024).decode().split()
+        return response[0]
 
 # peer is started
 main = peerMain()
