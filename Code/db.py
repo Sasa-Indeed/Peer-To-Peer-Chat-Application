@@ -54,21 +54,20 @@ class DB:
             colorama.Fore.BLUE,
             colorama.Fore.MAGENTA,
             colorama.Fore.CYAN,
-            colorama.Fore.WHITE,
+        
             (colorama.Fore.RED + colorama.Style.BRIGHT),
             (colorama.Fore.GREEN + colorama.Style.BRIGHT),
             (colorama.Fore.YELLOW + colorama.Style.BRIGHT),
             (colorama.Fore.BLUE + colorama.Style.BRIGHT),
             (colorama.Fore.MAGENTA + colorama.Style.BRIGHT),
             (colorama.Fore.CYAN + colorama.Style.BRIGHT),
-            (colorama.Fore.WHITE + colorama.Style.BRIGHT),
             (colorama.Fore.RED + colorama.Style.DIM),
             (colorama.Fore.GREEN + colorama.Style.DIM),
             (colorama.Fore.YELLOW + colorama.Style.DIM),
             (colorama.Fore.BLUE + colorama.Style.DIM),
             (colorama.Fore.MAGENTA + colorama.Style.DIM),
             (colorama.Fore.CYAN + colorama.Style.DIM),
-            (colorama.Fore.WHITE + colorama.Style.DIM),
+        
             ]
         online_peer = {
             "username": username,
@@ -81,7 +80,7 @@ class DB:
 
     # logs out the user 
     def user_logout(self, username):
-        self.db.online_peers.remove({"username": username})
+        self.db.online_peers.delete_one({"username": username})
     
 
     # retrieves the ip address and the port number of the username

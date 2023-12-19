@@ -403,7 +403,7 @@ class peerMain:
                 break
 
             #choice 6 to display usernames of all online users
-            elif choice is "6" and self.isOnline:
+            elif choice is "6" :
                 self.get_users()
         # if main process is not ended with cancel selection
         # socket of the client is closed
@@ -492,11 +492,16 @@ class peerMain:
 
     #print list of online users
     def get_users(self):
-        message = "List"
-        self.tcpClientSocket.send(message.encode())
-        response = self.tcpClientSocket.recv(1024).decode().split()
-        for i in range(len(response)):
-            print(response[i])
+        
+        if self.isOnline:
+            message = "List"
+            self.tcpClientSocket.send(message.encode())
+            response = self.tcpClientSocket.recv(1024).decode()
+            response=response.split()
+            for i in range(len(response)):
+              print(response[i])
+        else:
+           print("you didn't log in\n")
 
     # gets color assigned to current online user
     def get_color(self,username):

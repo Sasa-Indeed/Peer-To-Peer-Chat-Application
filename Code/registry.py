@@ -125,9 +125,13 @@ class ClientThread(threading.Thread):
                  # List users #
                 elif message[0] == "List":
                     response = ""
+                
                     list = db.get_online_users()
                     for i in range(len(list)):
                         response = list[i] + " " + response
+            
+                        
+                         
                     self.tcpClientSocket.send(response.encode())
 
                 #get color#
