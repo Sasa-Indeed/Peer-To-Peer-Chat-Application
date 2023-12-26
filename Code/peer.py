@@ -14,6 +14,8 @@ import colorama
 
 hashing = Hashing()
 
+
+
 # Server side of peer
 class PeerServer(threading.Thread):
 
@@ -312,12 +314,19 @@ class peerMain:
         self.timer = None
         
         choice = "0"
+        initialFlag = True
         # log file initialization
         logging.basicConfig(filename="peer.log", level=logging.INFO)
         # as long as the user is not logged out, asks to select an option in the menu
         while choice != "3":
             # menu selection prompt
-            choice = input("Choose: \nCreate account: 1\nLogin: 2\nLogout: 3\nSearch: 4\nStart a chat: 5\nShow online users: 6\n")
+            if(initialFlag):
+                print("********************************************************************************\n*\t\t\t\t\t\t\t\t\t       *\n*\t\t\t WELCOME TO CHAT ROOMS\t\t\t\t       *\n*\t\t     \t\t\t\t\t\t\t       *\n********************************************************************************")
+                choice = input("Choose: \nCreate account: 1\nLogin: 2\n")
+                if choice is "2":
+                    initialFlag = False
+            else:
+                choice = input("Choose: \nCreate account: 1\nLogin: 2\nLogout: 3\nSearch: 4\nStart a chat: 5\nShow online users: 6\n")
             # if choice is 1, creates an account with the username
             # and password entered by the user
             if choice is "1":
