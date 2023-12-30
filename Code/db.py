@@ -101,3 +101,34 @@ class DB:
     def get_color(self,username):
         color = self.db.online_peers.find_one({"username" : username})["color"]
         return color
+
+    #Create a Chat Room
+    def create_ChatRoom(self, ChatRoom_Name):
+        ChatRoom = {
+            "ChatRoom_Name": ChatRoom_Name,
+            "Participants": []
+        }
+        self.db.ChatRooms.insert_one(ChatRoom)
+
+    #Join a Chat Room
+    def join_ChatRoom(self , ChatRoom_Name , username):
+        self.db.ChatRooms.update_one(
+            {"CHatRoom_Name": ChatRoom_Name},
+            {"$addToSet": {"Participants": username}}
+        )
+
+    #Checks if the Chat Room exists or not
+    def does_ChatRoom_Exists(self , ChatRoom_Name):
+        ChatRoom_Exists = self.db.ChatRooms.find_one({"ChatRoom_Name": ChatRoom_Name})
+        if ChatRoom_Exists != None:
+            return True
+        else:
+            return False
+
+    #Get the participants in the Chat Room
+    def get_ChatRoom_Participants(self , ChatRoom_Name):
+        Participants = ''
+        ChatRoom_Participants = self.db.ChatRooms.find_one({"ChatRoom_Name":ChatRoom_Name})["Participants"]
+        for Participants in ChatRoom_Participants:
+            Participants += Participants + " "
+        return Participants

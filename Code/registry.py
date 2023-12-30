@@ -26,6 +26,7 @@ class ClientThread(threading.Thread):
         self.username = None
         self.isOnline = True
         self.udpServer = None
+        self.chatroom = None
         print("New thread started for " + ip + ":" + str(port))
 
     # main of the thread
@@ -40,6 +41,7 @@ class ClientThread(threading.Thread):
                 # waits for incoming messages from peers
                 message = self.tcpClientSocket.recv(1024).decode().split()
                 logging.info("Received from " + self.ip + ":" + str(self.port) + " -> " + " ".join(message))            
+
                 #   JOIN    #
                 if message[0] == "JOIN":
                     # join-exist is sent to peer,
@@ -56,6 +58,7 @@ class ClientThread(threading.Thread):
                         response = "join-success"
                         logging.info("Send to " + self.ip + ":" + str(self.port) + " -> " + response) 
                         self.tcpClientSocket.send(response.encode())
+
                 #   LOGIN    #
                 elif message[0] == "LOGIN":
                     # login-account-not-exist is sent to peer,
@@ -100,6 +103,7 @@ class ClientThread(threading.Thread):
                             response = "login-wrong-password"
                             logging.info("Send to " + self.ip + ":" + str(self.port) + " -> " + response) 
                             self.tcpClientSocket.send(response.encode())
+
                 #   LOGOUT  #
                 elif message[0] == "LOGOUT":
                     # if user is online,
@@ -122,6 +126,7 @@ class ClientThread(threading.Thread):
                     else:
                         self.tcpClientSocket.close()
                         break
+
                  # List users #
                 elif message[0] == "List":
                     response = ""
@@ -129,9 +134,7 @@ class ClientThread(threading.Thread):
                     list = db.get_online_users()
                     for i in range(len(list)):
                         response = list[i] + " " + response
-            
-                        
-                         
+
                     self.tcpClientSocket.send(response.encode())
 
                 #get color#
@@ -159,6 +162,40 @@ class ClientThread(threading.Thread):
                         response = "search-user-not-found"
                         logging.info("Send to " + self.ip + ":" + str(self.port) + " -> " + response) 
                         self.tcpClientSocket.send(response.encode())
+
+                # Chat Room Creation #
+                elif message[0] == "Create_ChatRoom":
+                    if db.does_ChatRoom_Exists(message[1]):
+                        response = "ChatRoom-Exist"
+                        logging.info(f"Send to {self.ip}:{str(self.port)} -> {response}")
+                        self.tcpClientSocket.send(response.encode())
+                    else:
+                        response = "ChatRoom-Created-Successfully"
+                        logging.info(f"Send to {self.ip}:{str(self.port)} -> {response}")
+                        self.tcpClientSocket.send(response.encode())
+                        db.create_ChatRoom(message[1])
+
+                # Joining Chat Room #
+                elif message[0] == "Join-ChatRoom":
+                    if db.does_ChatRoom_Exists(message[1]):
+                        response = "ChatRoom_Found"
+                        logging.info("Send to " + self.ip + ":" + str(self.port) + " -> " + response)
+                        response += " " + db.get_ChatRoom_Participants(message[1])
+                        self.tcpClientSocket.send(response.encode())
+                        db.join_ChatRoom(message[1], message[2])
+                    else:
+                        response = "ChatRoom_Not_Found"
+                        logging.info("Send to " + self.ip + ":" + str(self.port) + " -> " + {response})
+                        self.tcpClientSocket.send(response.encode())
+
+                # Getting the list of users in Chat Room #
+                elif message[0] == "Get_ChatRoom_UsersList":
+                    response = "ChatRoom_Userlist"
+                    response += " " + db.get_ChatRoom_Participants(message[1])
+                    self.tcpClientSocket.send(response.encode())
+
+
+
             except OSError as oErr:
                 logging.error("OSError: {0}".format(oErr)) 
 
@@ -170,7 +207,6 @@ class ClientThread(threading.Thread):
                             
 # implementation of the udp server thread for clients
 class UDPServer(threading.Thread):
-
 
     # udp server thread initializations
     def __init__(self, username, clientSocket):
@@ -190,6 +226,9 @@ class UDPServer(threading.Thread):
                 del tcpThreads[self.username]
         self.tcpClientSocket.close()
         print("Removed " + self.username + " from online peers")
+
+    def send_ChatRoom_Users(self,ChatRoom_Name):
+        return db.get_ChatRoom_Participants(ChatRoom_Name)
 
 
     # resets the timer for udp server
@@ -251,12 +290,12 @@ while inputs:
     for s in readable:
         # if the message received comes to the tcp socket
         # the connection is accepted and a thread is created for it, and that thread is started
-        if s is tcpSocket:
+        if s == tcpSocket:
             tcpClientSocket, addr = tcpSocket.accept()
             newThread = ClientThread(addr[0], addr[1], tcpClientSocket)
             newThread.start()
         # if the message received comes to the udp socket
-        elif s is udpSocket:
+        elif s == udpSocket:
             # received the incoming udp message and parses it
             message, clientAddress = s.recvfrom(1024)
             message = message.decode().split()
