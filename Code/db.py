@@ -113,7 +113,7 @@ class DB:
     #Join a Chat Room
     def join_ChatRoom(self , ChatRoom_Name , username):
         self.db.ChatRooms.update_one(
-            {"CHatRoom_Name": ChatRoom_Name},
+            {"ChatRoom_Name": ChatRoom_Name},
             {"$addToSet": {"Participants": username}}
         )
 
@@ -126,9 +126,8 @@ class DB:
             return False
 
     #Get the participants in the Chat Room
-    def get_ChatRoom_Participants(self , ChatRoom_Name):
+    def get_ChatRoom_Participants(self, ChatRoom_Name):
         Participants = ''
-        ChatRoom_Participants = self.db.ChatRooms.find_one({"ChatRoom_Name":ChatRoom_Name})["Participants"]
-        for Participants in ChatRoom_Participants:
-            Participants += Participants + " "
+        ChatRoom_Participants = self.db.ChatRooms.find_one({"ChatRoom_Name": ChatRoom_Name})["Participants"]
+        Participants = " ".join(ChatRoom_Participants)
         return Participants

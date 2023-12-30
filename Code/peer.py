@@ -136,7 +136,7 @@ class PeerServer(threading.Thread):
                         # if a message is received, and if this is not a quit message ':q' and 
                         # if it is not an empty message, show this message to the user
                         elif messageReceived[:2] != ":q" and len(messageReceived)!= 0:
-                            print(self.color + self.chattingClientName + ": " + messageReceived)
+                            print(self.color + self.chattingClientName + " : " + messageReceived)
                         # if the message received is a quit message ':q',
                         # makes ischatrequested 1 to receive new incoming request messages
                         # removes the socket of the connected peer from the inputs list
@@ -166,7 +166,7 @@ class PeerServer(threading.Thread):
 # Client side of peer
 class PeerClient(threading.Thread):
     # variable initializations for the client side of the peer
-    def __init__(self, ipToConnect, portToConnect, username, peerServer, responseReceived,message='None'):
+    def __init__(self, ipToConnect, portToConnect, username, peerServer, responseReceived,message='None',receiver=None):
         threading.Thread.__init__(self)
         # keeps the ip address of the peer that this will connect
         self.ipToConnect = ipToConnect
@@ -185,7 +185,7 @@ class PeerClient(threading.Thread):
         # keeps if this client is ending the chat or not
         self.isEndingChat = False
         self.message = message
-
+        self.receiver = receiver
 
     # main method of the peer client thread
     def run(self):
@@ -422,11 +422,11 @@ class peerMain:
                 while self.inChatRoom:
                     message = input(f"{username}" + " : ")
                     self.ChatRoomUsers = self.updateChatRoomUsersList(ChatRoom_Name)
-                    if self.ChatRoomUsers != None:
+                    if self.ChatRoomUsers != None and isinstance(self.ChatRoomUsers, list):
                         for user in self.ChatRoomUsers:
-                            #Don't send a message to the same user
+                            # Don't send a message to the same user
                             if user != username:
-                                self.initiate_Chat(user,message)
+                                self.initiate_ChatRoom(user, message)
 
             # if this is the receiver side then it will get the prompt to accept an incoming request during the main loop
             # that's why response is evaluated in main process not the server thread even though the prompt is printed by server
@@ -589,11 +589,14 @@ class peerMain:
             for user in (response[1:]):
                 print(f"{colorama.Fore.CYAN}{user}")
                 self.ChatRoomUsers.append(user)
+            if self.ChatRoomUsers != None:
+                for user in self.ChatRoomUsers:
+                    self.initiate_ChatRoom(user,f"User {self.loginCredentials[0]} has joined the room")
 
     def updateChatRoomUsersList(self,ChatRoom_Name):
         if self.isOnline:
             #Send a request to the registry to get the Chat Room  Users update
-            message = "Get_ChatRoom_UsersList" + ChatRoom_Name
+            message = "Get_ChatRoom_UsersList " + ChatRoom_Name
             self.tcpClientSocket.send(message.encode())
             response = self.tcpClientSocket.recv(1024).decode().split()
             #Process the received chat room list
@@ -606,9 +609,9 @@ class peerMain:
         # if searched user is found, then its ip address and port number is retrieved
         # and a client thread is created
         # main process waits for the client thread to finish its chat
-        if SearchStatus is not None:
+        if SearchStatus != None:
             SearchStatus = SearchStatus.split(":")
-            self.peerClient = PeerClient(SearchStatus[0], int(SearchStatus[1]), self.loginCredentials[0],self.peerServer, None, message)
+            self.peerClient = PeerClient(SearchStatus[0], int(SearchStatus[1]), self.loginCredentials[0],self.peerServer, None, message,username)
             self.peerClient.start()
             self.peerClient.join()
 

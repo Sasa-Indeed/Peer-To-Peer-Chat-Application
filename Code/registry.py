@@ -180,9 +180,9 @@ class ClientThread(threading.Thread):
                     if db.does_ChatRoom_Exists(message[1]):
                         response = "ChatRoom_Found"
                         logging.info("Send to " + self.ip + ":" + str(self.port) + " -> " + response)
-                        response += " " + db.get_ChatRoom_Participants(message[1])
+                        response = "ChatRoom_Found " + db.get_ChatRoom_Participants(message[1])
+                        logging.info("Send to " + self.ip + ":" + str(self.port) + " -> " + response)
                         self.tcpClientSocket.send(response.encode())
-                        db.join_ChatRoom(message[1], message[2])
                     else:
                         response = "ChatRoom_Not_Found"
                         logging.info("Send to " + self.ip + ":" + str(self.port) + " -> " + {response})
@@ -190,10 +190,8 @@ class ClientThread(threading.Thread):
 
                 # Getting the list of users in Chat Room #
                 elif message[0] == "Get_ChatRoom_UsersList":
-                    response = "ChatRoom_Userlist"
-                    response += " " + db.get_ChatRoom_Participants(message[1])
+                    response = "ChatRoom_Userlist " + db.get_ChatRoom_Participants(message[1])
                     self.tcpClientSocket.send(response.encode())
-
 
 
             except OSError as oErr:
