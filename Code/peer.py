@@ -97,6 +97,11 @@ class PeerServer(threading.Thread):
                     else:
                         # message is received from connected peer
                         messageReceived = s.recv(1024).decode()
+                        FindIndication = messageReceived.find("ChatRoom ")
+                        if (FindIndication != -1):
+                            if (len(messageReceived) != 0):
+                                print({messageReceived})
+                                continue
                         # logs the received message
                         logging.info("Received from " + str(self.connectedPeerIP) + " -> " + str(messageReceived))
                         # if message is a request message it means that this is the receiver side peer server
