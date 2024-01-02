@@ -145,22 +145,25 @@ class PeerServer(threading.Thread):
                         # if the message received is a quit message ':q',
                         # makes ischatrequested 1 to receive new incoming request messages
                         # removes the socket of the connected peer from the inputs list
-                        elif messageReceived[:2] == ":q":
+                        elif messageReceived[:2] == ":q" and self.inChatRoom == False:
                             self.isChatRequested = 0
                             inputs.clear()
                             inputs.append(self.tcpServerSocket)
                             # connected peer ended the chat
                             if len(messageReceived) == 2:
-                                print("User you're chatting with ended the chat")
-                                print("Press enter to quit the chat: ")
+                                if len(messageReceived) == 2:
+                                    print(f"{colorama.Fore.RED}User you're chatting with started the chat")
+                                    print(f"{colorama.Fore.RED}Press enter to quit the chat: ")
+
                         # if the message is an empty one, then it means that the
                         # connected user suddenly ended the chat(an error occurred)
-                        elif len(messageReceived) == 0:
+                        elif len(messageReceived) == 0 and self.inChatRoom == False:
                             self.isChatRequested = 0
                             inputs.clear()
                             inputs.append(self.tcpServerSocket)
-                            print("User you're chatting with suddenly ended the chat")
-                            print("Press enter to quit the chat: ")
+                            print(f"{colorama.Fore.RED}User you're chatting with suddenly ended the chat")
+                            print(f"{colorama.Fore.RED}Press enter if you want to exit the chat: ")
+
             # handles the exceptions, and logs them
             except OSError as oErr:
                 logging.error("OSError: {0}".format(oErr))
@@ -417,18 +420,21 @@ class peerMain:
 
             #choice 7 to create a new Chat Room
             elif choice == "7" and self.isOnline:
-                ChatRoom_Name = input("Enter the name of the Chat Room you want to create: ")
+                ChatRoom_Name = input("Create new Chat Room: ")
                 self.createChatRoom(ChatRoom_Name)
 
             #choice 7 to join an existing Chat Room
             elif choice == "8" and self.isOnline:
-                ChatRoom_Name = input("Enter the name of the Chat Room you want to join: ")
+                ChatRoom_Name = input("Join Chat Room: ")
                 self.joinChatRoom(ChatRoom_Name)
                 while self.inChatRoom:
                     message = input(f"{username}" + " : ")
                     self.ChatRoomUsers = self.updateChatRoomUsersList(ChatRoom_Name)
                     if self.ChatRoomUsers != None and isinstance(self.ChatRoomUsers, list):
                         for user in self.ChatRoomUsers:
+                            if message == ":q":
+                                self.exitChatRoom(username,ChatRoom_Name)
+                                break
                             # Don't send a message to the same user
                             if user != username:
                                 self.initiate_ChatRoom(user, message)
@@ -472,7 +478,7 @@ class peerMain:
         response = self.tcpClientSocket.recv(1024).decode()
         logging.info("Received from " + self.registryName + " -> " + response)
         if response == "join-success":
-            print(f"{colorama.Fore.RED}Account created...")
+            print(f"{colorama.Fore.RED}Account {username} created...")
         elif response == "join-exist":
             print(f"{colorama.Fore.RED}choose another username or login...")
 
@@ -569,34 +575,34 @@ class peerMain:
         response = self.tcpClientSocket.recv(1024).decode().split()
         logging.info(f"Recieve from {self.registryName} ->" .join(response))
         if response[0] == "ChatRoom-Exist":
-            print(f"{colorama.Fore.RED}This Chat Room already exist ... Choose another name")
+            print(f"{colorama.Fore.RED}This Chat Room {ChatRoom_Name} already exist ... Choose another name")
             return 0
         elif response[0] == "ChatRoom-Created-Successfully":
-            print(f"{colorama.Fore.YELLOW}The Chat Room is created Successfully ")
+            print(f"{colorama.Fore.YELLOW}The Chat Room {ChatRoom_Name} is created Successfully ")
             self.inChatRoom = True
 
     #Function for Joining a Chat Room
-    def joinChatRoom(self , ChatRoom_Name):
+    def joinChatRoom(self, ChatRoom_Name):
         message = "Join-ChatRoom " + ChatRoom_Name + " " + self.loginCredentials[0]
         logging.info(f"Send to {self.registryName} : {str(self.registryPort)} -> {message}")
         self.tcpClientSocket.send(message.encode())
         response = self.tcpClientSocket.recv(1024).decode().split()
         logging.info(f"Receive from {self.registryName} ->" .join(response))
         if response[0] == "ChatRoom_Not_Found":
-            print(f"{colorama.Fore.YELLOW} Chat Room not found")
+            print(f"{colorama.Fore.YELLOW} Chat Room {ChatRoom_Name} is not found")
             return 0
         elif response[0] == "ChatRoom_Found":
-            print(f"{colorama.Fore.YELLOW} Joined Chat Room successfully\n")
+            print(f"{colorama.Fore.YELLOW} Joined Chat Room {ChatRoom_Name} successfully\n")
             self.inChatRoom = True
             self.ChatRoomName = ChatRoom_Name
             #This for loop is for showing the users in Chat Room
-            print(f"{colorama.Fore.CYAN}The current users in this Chat Room are : \n")
+            print(f"{colorama.Fore.CYAN}The current users in this Chat Room {ChatRoom_Name} are : \n")
             for user in (response[1:]):
                 print(f"{colorama.Fore.CYAN}{user}")
                 self.ChatRoomUsers.append(user)
             if self.ChatRoomUsers != None:
                 for user in self.ChatRoomUsers:
-                    self.initiate_ChatRoom(user,f"User {self.loginCredentials[0]} has joined the room")
+                    self.initiate_ChatRoom(user,f"User {self.loginCredentials[0]} has joined the {ChatRoom_Name} Chat Room")
 
     def updateChatRoomUsersList(self,ChatRoom_Name):
         if self.isOnline:
@@ -620,5 +626,18 @@ class peerMain:
             self.peerClient.start()
             self.peerClient.join()
 
+    #Exiting the chat room
+    def exitChatRoom(self, username, ChatRoom_Name):
+        if self.chatroomUsers is not None:
+            for user in self.chatroomUsers:
+                self.initiate_chat(user, f"{colorama.Fore.RED}User {username} has left the room")
+        message = "Exit_CHAT_ROOM " + username + " " + ChatRoom_Name
+        self.tcpClientSocket.send(message.encode())
+        response = self.tcpClientSocket.recv(1024).decode().split()
+        if response[0] == "Chat_Room_Exit":
+            print(f"{colorama.Fore.RED} You have left the chat room")
+            self.inChatroom = False
+
+            return 0
 # peer is started
 main = peerMain()

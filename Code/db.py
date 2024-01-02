@@ -131,3 +131,12 @@ class DB:
         ChatRoom_Participants = self.db.ChatRooms.find_one({"ChatRoom_Name": ChatRoom_Name})["Participants"]
         Participants = " ".join(ChatRoom_Participants)
         return Participants
+
+        # Remove user from chat room list
+
+    #To remove user frmo the chat room database list
+    def remove_ChatRoom_user(self, ChatRoom_Name, username):
+        self.db.chat_rooms.update_one(
+            {"room_name": ChatRoom_Name},
+            {"$pull": {"participants": username}}
+        )

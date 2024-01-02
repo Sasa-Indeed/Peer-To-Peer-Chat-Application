@@ -193,6 +193,11 @@ class ClientThread(threading.Thread):
                     response = "ChatRoom_Userlist " + db.get_ChatRoom_Participants(message[1])
                     self.tcpClientSocket.send(response.encode())
 
+                #Leaving Cat Room
+                elif message[0] == "Exit_CHAT_ROOM":
+                    response = "Chat_Room_Exit"
+                    db.remove_ChatRoom_user(message[2],message[1])
+                    self.tcpClientSocket.send(response.encode())
 
             except OSError as oErr:
                 logging.error("OSError: {0}".format(oErr)) 
