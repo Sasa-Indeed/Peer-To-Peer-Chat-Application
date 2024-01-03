@@ -19,7 +19,7 @@ class PeerServer(threading.Thread):
 
 
     # Peer server initialization
-    def __init__(self, username,color, peerServerPort):
+    def __init__(self, username,color, peerServerPort,ChatRoomName):
         threading.Thread.__init__(self)
         # keeps the username of the peer
         self.username = username
@@ -43,7 +43,11 @@ class PeerServer(threading.Thread):
         # keeps the username of the peer that this peer is chatting with
         self.chattingClientName = None
         # Check whether the user is in a class room or not
-        self.inChatRoom = False
+        if ChatRoomName == None:
+            self.inChatRoom = False
+        else:
+            self.inChatRoom = True
+
         #return color back to white
         colorama.init(autoreset=True)
     
@@ -88,8 +92,9 @@ class PeerServer(threading.Thread):
                         inputs.append(connected)
                         # if the user is not chatting, then the ip and the socket of
                         # this peer is assigned to server variables
-                        if self.isChatRequested == 0:     
-                            print(self.username + " is connected from " + str(addr))
+                        if self.isChatRequested == 0:
+                            if self.inChatRoom == False:
+                                print(self.username + " is connected from " + str(addr))
                             self.connectedPeerSocket = connected
                             self.connectedPeerIP = addr[0]
                     # if the socket that receives the data is the one that
@@ -151,7 +156,7 @@ class PeerServer(threading.Thread):
                             inputs.append(self.tcpServerSocket)
                             # connected peer ended the chat
                             if len(messageReceived) == 2:
-                                if len(messageReceived) == 2:
+                                if self.inChatRoom == False:
                                     print(f"{colorama.Fore.RED}User you're chatting with started the chat")
                                     print(f"{colorama.Fore.RED}Press enter to quit the chat: ")
 
@@ -203,10 +208,10 @@ class PeerClient(threading.Thread):
         self.tcpClientSocket.connect((self.ipToConnect, self.portToConnect))
         # if the server of this peer is not connected by someone else and if this is the requester side peer client then enters here
         if self.message != None:
-            self.peerServer.isChatRequested = 1
+            #self.peerServer.isChatRequested = 1
             RequestMessage = "ChatRoom " + self.username + " : " + self.message
             self.tcpClientSocket.send(RequestMessage.encode())
-        elif self.peerServer.isChatRequested == 0 and self.responseReceived is None:
+        elif self.peerServer.isChatRequested == 0 and self.responseReceived == None:
             # composes a request message and this is sent to server and then this waits a response message from the server this client connects
             requestMessage = "CHAT-REQUEST " + str(self.peerServer.peerServerPort)+ " " + self.username
             # logs the chat request sent to other peer
@@ -371,7 +376,7 @@ class peerMain:
                     self.loginCredentials = (username, password,color)
                     self.peerServerPort = peerServerPort
                     # creates the server thread for this peer, and runs it
-                    self.peerServer = PeerServer(self.loginCredentials[0],self.loginCredentials[2], self.peerServerPort)
+                    self.peerServer = PeerServer(self.loginCredentials[0],self.loginCredentials[2], self.peerServerPort,self.ChatRoomName)
                     self.peerServer.start()
                     # hello message is sent to registry
                     self.sendHelloMessage()
@@ -408,7 +413,7 @@ class peerMain:
                 # if searched user is found, then its ip address and port number is retrieved
                 # and a client thread is created
                 # main process waits for the client thread to finish its chat
-                if searchStatus != None and searchStatus != 0:
+                if searchStatus != None:
                     searchStatus = searchStatus.split(":")
                     self.peerClient = PeerClient(searchStatus[0], int(searchStatus[1]) , self.loginCredentials[0], self.peerServer, None)
                     self.peerClient.start()
@@ -423,14 +428,14 @@ class peerMain:
                 ChatRoom_Name = input("Create new Chat Room: ")
                 self.createChatRoom(ChatRoom_Name)
 
-            #choice 7 to join an existing Chat Room
+            #choice 8 to join an existing Chat Room
             elif choice == "8" and self.isOnline:
                 ChatRoom_Name = input("Join Chat Room: ")
                 self.joinChatRoom(ChatRoom_Name)
                 while self.inChatRoom:
                     message = input(f"{username}" + " : ")
                     self.ChatRoomUsers = self.updateChatRoomUsersList(ChatRoom_Name)
-                    if self.ChatRoomUsers != None and isinstance(self.ChatRoomUsers, list):
+                    if self.ChatRoomUsers is not None:
                         for user in self.ChatRoomUsers:
                             if message == ":q":
                                 self.exitChatRoom(username,ChatRoom_Name)
@@ -529,7 +534,8 @@ class peerMain:
         response = self.tcpClientSocket.recv(1024).decode().split()
         logging.info("Received from " + self.registryName + " -> " + " ".join(response))
         if response[0] == "search-success":
-            print(username + " is found successfully...")
+            if self.inChatRoom == False:
+                print(f"{colorama.Fore.YELLOW}{username} is found successfully...")
             return response[1]
         elif response[0] == "search-user-not-online":
             print(username + " is not online...")
@@ -570,10 +576,8 @@ class peerMain:
     #Function for creating a Chat Room
     def createChatRoom(self, ChatRoom_Name):
         message = "Create_ChatRoom " + ChatRoom_Name
-        logging.info(f"Send to {self.registryName} : {str(self.registryPort)} -> {message}")
         self.tcpClientSocket.send(message.encode())
         response = self.tcpClientSocket.recv(1024).decode().split()
-        logging.info(f"Recieve from {self.registryName} ->" .join(response))
         if response[0] == "ChatRoom-Exist":
             print(f"{colorama.Fore.RED}This Chat Room {ChatRoom_Name} already exist ... Choose another name")
             return 0
@@ -584,10 +588,8 @@ class peerMain:
     #Function for Joining a Chat Room
     def joinChatRoom(self, ChatRoom_Name):
         message = "Join-ChatRoom " + ChatRoom_Name + " " + self.loginCredentials[0]
-        logging.info(f"Send to {self.registryName} : {str(self.registryPort)} -> {message}")
         self.tcpClientSocket.send(message.encode())
         response = self.tcpClientSocket.recv(1024).decode().split()
-        logging.info(f"Receive from {self.registryName} ->" .join(response))
         if response[0] == "ChatRoom_Not_Found":
             print(f"{colorama.Fore.YELLOW} Chat Room {ChatRoom_Name} is not found")
             return 0
@@ -611,16 +613,16 @@ class peerMain:
             self.tcpClientSocket.send(message.encode())
             response = self.tcpClientSocket.recv(1024).decode().split()
             #Process the received chat room list
-            if response[0] == "ChatRoom_Userlist":
-                updatedChatRoomUsersList = response[1:]
-                return updatedChatRoomUsersList
+        if response[0] == "ChatRoom_Userlist":
+            updatedChatRoomUsersList = response[1:]
+            return updatedChatRoomUsersList
 
     def initiate_ChatRoom(self,username,message):
         SearchStatus = self.searchUser(username)
         # if searched user is found, then its ip address and port number is retrieved
         # and a client thread is created
         # main process waits for the client thread to finish its chat
-        if SearchStatus != None:
+        if SearchStatus is not None:
             SearchStatus = SearchStatus.split(":")
             self.peerClient = PeerClient(SearchStatus[0], int(SearchStatus[1]), self.loginCredentials[0],self.peerServer, None, message,username)
             self.peerClient.start()
@@ -628,7 +630,7 @@ class peerMain:
 
     #Exiting the chat room
     def exitChatRoom(self, username, ChatRoom_Name):
-        if self.chatroomUsers is not None:
+        if self.chatroomUsers != None:
             for user in self.chatroomUsers:
                 self.initiate_chat(user, f"{colorama.Fore.RED}User {username} has left the room")
         message = "Exit_CHAT_ROOM " + username + " " + ChatRoom_Name
@@ -637,7 +639,7 @@ class peerMain:
         if response[0] == "Chat_Room_Exit":
             print(f"{colorama.Fore.RED} You have left the chat room")
             self.inChatroom = False
-
             return 0
+
 # peer is started
 main = peerMain()
