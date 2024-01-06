@@ -105,7 +105,9 @@ class PeerServer(threading.Thread):
                         FindIndication = messageReceived.find("ChatRoom ")
                         if (FindIndication != -1):
                             if (len(messageReceived) != 0):
-                                print({messageReceived})
+                                messageReceived = messageReceived.replace("ChatRoom ", "")
+                                messageReceived = messageReceived.replace(":", "->")
+                                print('\n' + messageReceived )
                                 continue
                         # logs the received message
                         logging.info("Received from " + str(self.connectedPeerIP) + " -> " + str(messageReceived))
@@ -344,7 +346,7 @@ class peerMain:
         while choice != "3":
 
             if (initialFlag):
-                print("********************************************************************************\n*\t\t\t\t\t\t\t\t\t\t       *\n*\t\t\t WELCOME TO CHAT ROOMS\t\t\t    *\n*\t\t\t     \t\t\t\t\t\t      *\n********************************************************************************")
+                print("*********************************************************************************\n*\t\t\t\t\t\t\t\t\t        *\n*\t\t\t WELCOME TO CHAT ROOMS\t\t\t\t\t*\n*\t\t\t     \t\t\t\t\t\t        *\n*********************************************************************************")
                 choice = input(f"{colorama.Fore.MAGENTA}Choose: \nCreate account: 1\nLogin: 2\n")
                 if choice == "2":
                     initialFlag = False
@@ -380,6 +382,8 @@ class peerMain:
                     self.peerServer.start()
                     # hello message is sent to registry
                     self.sendHelloMessage()
+                else:
+                    initialFlag = True
 
             # if choice is 3 and user is logged in, then user is logged out
             # and peer variables are set, and server and client sockets are closed
@@ -421,7 +425,10 @@ class peerMain:
 
             # choice 6 to display usernames of all online users
             elif choice == "6":
+                print("\n********************************************************")
+                print("\t\t Online Users\n")
                 self.get_users()
+                print("********************************************************\n")
 
             #choice 7 to create a new Chat Room
             elif choice == "7" and self.isOnline:
@@ -433,7 +440,7 @@ class peerMain:
                 ChatRoom_Name = input("Join Chat Room: ")
                 self.joinChatRoom(ChatRoom_Name)
                 while self.inChatRoom:
-                    message = input(f"{username}" + " : ")
+                    message = input()
                     self.ChatRoomUsers = self.updateChatRoomUsersList(ChatRoom_Name)
                     if self.ChatRoomUsers is not None:
                         for user in self.ChatRoomUsers:
@@ -591,20 +598,20 @@ class peerMain:
         self.tcpClientSocket.send(message.encode())
         response = self.tcpClientSocket.recv(1024).decode().split()
         if response[0] == "ChatRoom_Not_Found":
-            print(f"{colorama.Fore.YELLOW} Chat Room {ChatRoom_Name} is not found")
+            print(f"{colorama.Fore.YELLOW} Chatroom {ChatRoom_Name} is not found")
             return 0
         elif response[0] == "ChatRoom_Found":
-            print(f"{colorama.Fore.YELLOW} Joined Chat Room {ChatRoom_Name} successfully\n")
+            print(f"{colorama.Fore.YELLOW} Joined Chatroom {ChatRoom_Name} successfully\n")
             self.inChatRoom = True
             self.ChatRoomName = ChatRoom_Name
             #This for loop is for showing the users in Chat Room
-            print(f"{colorama.Fore.CYAN}The current users in this Chat Room {ChatRoom_Name} are : \n")
+            print(f"{colorama.Fore.CYAN}The current users in this Chatroom {ChatRoom_Name} are : \n")
             for user in (response[1:]):
                 print(f"{colorama.Fore.CYAN}{user}")
                 self.ChatRoomUsers.append(user)
             if self.ChatRoomUsers != None:
                 for user in self.ChatRoomUsers:
-                    self.initiate_ChatRoom(user,f"User {self.loginCredentials[0]} has joined the {ChatRoom_Name} Chat Room")
+                    self.initiate_ChatRoom(user,"User " + self.loginCredentials[0]  + " has joined " + ChatRoom_Name + " ChatRoom")
 
     def updateChatRoomUsersList(self,ChatRoom_Name):
         if self.isOnline:
