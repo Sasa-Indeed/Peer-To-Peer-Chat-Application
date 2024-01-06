@@ -107,7 +107,11 @@ class PeerServer(threading.Thread):
                             if (len(messageReceived) != 0):
                                 messageReceived = messageReceived.replace("ChatRoom ", "")
                                 messageReceived = messageReceived.replace(":", "->")
-                                print('\n' + messageReceived )
+                                messageReceived = messageReceived.split()
+                                WordReceived =""
+                                for i in range(len(messageReceived)-1):
+                                    WordReceived = WordReceived + " " + messageReceived[i]
+                                print('\n' + messageReceived[-1] + WordReceived)
                                 continue
                         # logs the received message
                         logging.info("Received from " + str(self.connectedPeerIP) + " -> " + str(messageReceived))
@@ -181,7 +185,7 @@ class PeerServer(threading.Thread):
 # Client side of peer
 class PeerClient(threading.Thread):
     # variable initializations for the client side of the peer
-    def __init__(self, ipToConnect, portToConnect, username, peerServer, responseReceived,message='None',receiver=None):
+    def __init__(self, ipToConnect, portToConnect, username, peerServer, responseReceived,message='None',receiver=None,color ='None'):
         threading.Thread.__init__(self)
         # keeps the ip address of the peer that this will connect
         self.ipToConnect = ipToConnect
@@ -201,6 +205,7 @@ class PeerClient(threading.Thread):
         self.isEndingChat = False
         self.message = message
         self.receiver = receiver
+        self.color =color
 
     # main method of the peer client thread
     def run(self):
@@ -211,7 +216,7 @@ class PeerClient(threading.Thread):
         # if the server of this peer is not connected by someone else and if this is the requester side peer client then enters here
         if self.message != None:
             #self.peerServer.isChatRequested = 1
-            RequestMessage = "ChatRoom " + self.username + " : " + self.message
+            RequestMessage = "ChatRoom " + self.username + " : " + self.message + " " + self.color
             self.tcpClientSocket.send(RequestMessage.encode())
         elif self.peerServer.isChatRequested == 0 and self.responseReceived == None:
             # composes a request message and this is sent to server and then this waits a response message from the server this client connects
@@ -631,7 +636,7 @@ class peerMain:
         # main process waits for the client thread to finish its chat
         if SearchStatus is not None:
             SearchStatus = SearchStatus.split(":")
-            self.peerClient = PeerClient(SearchStatus[0], int(SearchStatus[1]), self.loginCredentials[0],self.peerServer, None, message,username)
+            self.peerClient = PeerClient(SearchStatus[0], int(SearchStatus[1]), self.loginCredentials[0],self.peerServer, None, message,username,self.get_color(self.loginCredentials[0]))
             self.peerClient.start()
             self.peerClient.join()
 

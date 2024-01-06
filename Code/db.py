@@ -61,12 +61,6 @@ class DB:
             (colorama.Fore.BLUE + colorama.Style.BRIGHT),
             (colorama.Fore.MAGENTA + colorama.Style.BRIGHT),
             (colorama.Fore.CYAN + colorama.Style.BRIGHT),
-            (colorama.Fore.RED + colorama.Style.DIM),
-            (colorama.Fore.GREEN + colorama.Style.DIM),
-            (colorama.Fore.YELLOW + colorama.Style.DIM),
-            (colorama.Fore.BLUE + colorama.Style.DIM),
-            (colorama.Fore.MAGENTA + colorama.Style.DIM),
-            (colorama.Fore.CYAN + colorama.Style.DIM),
         
             ]
         online_peer = {
