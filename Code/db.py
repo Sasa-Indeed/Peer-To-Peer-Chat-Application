@@ -130,7 +130,7 @@ class DB:
 
     #To remove user frmo the chat room database list
     def remove_ChatRoom_user(self, ChatRoom_Name, username):
-        self.db.chat_rooms.update_one(
-            {"room_name": ChatRoom_Name},
-            {"$pull": {"participants": username}}
+        self.db.ChatRooms.update_one(
+            {"ChatRoom_Name": ChatRoom_Name},
+            {"$pull": {"Participants": username}}
         )

@@ -448,10 +448,11 @@ class peerMain:
                     message = input()
                     self.ChatRoomUsers = self.updateChatRoomUsersList(ChatRoom_Name)
                     if self.ChatRoomUsers is not None:
+                        
+                        if message == ":q":
+                            self.exitChatRoom(username,ChatRoom_Name)
+                            break
                         for user in self.ChatRoomUsers:
-                            if message == ":q":
-                                self.exitChatRoom(username,ChatRoom_Name)
-                                break
                             # Don't send a message to the same user
                             if user != username:
                                 self.initiate_ChatRoom(user, message)
@@ -640,9 +641,9 @@ class peerMain:
 
     #Exiting the chat room
     def exitChatRoom(self, username, ChatRoom_Name):
-        if self.chatroomUsers != None:
-            for user in self.chatroomUsers:
-                self.initiate_chat(user, f"{colorama.Fore.RED}User {username} has left the room")
+        if self.ChatRoomUsers != None:
+            for user in self.ChatRoomUsers:
+                self.initiate_ChatRoom(user, f"{colorama.Fore.RED}User {username} has left the room")
         message = "Exit_CHAT_ROOM " + username + " " + ChatRoom_Name
         self.tcpClientSocket.send(message.encode())
         response = self.tcpClientSocket.recv(1024).decode().split()
